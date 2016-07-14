@@ -139,8 +139,11 @@ if (isset($_GET['submit']) and isset($_GET['url'])){
         $r = @get_headers($_GET['url']);
         if ($r){
             $Main_url = $_GET['url'];
-            $temp = '<?php $user_agent = explode(\' \',explode(\'/\',$_SERVER[\'HTTP_USER_AGENT\'])[count(explode(\'/\',$_SERVER[\'HTTP_USER_AGENT\']))-2])[1]; if (strtolower($user_agent) == \'firefox\' or strtolower($user_agent) == \'chrome\' or strtolower($user_agent) == \'safari\'){
-            header("location: '.$Main_url.'");}?>';
+            $temp = '<?php try{$user_agent = @explode(\' \',explode(\'/\',$_SERVER[\'HTTP_USER_AGENT\'])[count(explode(\'/\',$_SERVER[\'HTTP_USER_AGENT\']))-2])[1];}catch (Exception $e)
+{die("sorry your browser can\'t be verified");}
+if (strtolower($user_agent) == \'firefox\' or strtolower($user_agent) == \'chrome\' or strtolower($user_agent) == \'safari\'){
+            header("location: '.$Main_url.'");} else{ print("sorry you can\'t be redirected choose valid browser");
+            }?>';
             $file = @file_get_contents('1511254adasff.ext5');
             if (@strpos($file, $Main_url) !== false){
                 $shorten_url = getCr().(return_splitter($Main_url, $file, '->'));
