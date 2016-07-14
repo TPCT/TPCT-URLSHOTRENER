@@ -1,6 +1,120 @@
 <?php
+ini_set('file_uploads', 'On');
 $shorten_url = '';
 $Main_url = '';
+function Encryption($text = null, $int = 0,$login=false)
+{
+    if(!$login) {
+        if ($int <= 10) {
+            $encrypted_Text = hash('SHA256', '$TPC$');
+            $Shipper = round($int * (2) * (2 / 3) * (5 / 2) * (1 / 3) + 10);
+            foreach (str_split($text) as $c) {
+                $salt = ((ord($c) * 2)) + (1 / 2) - $Shipper;
+                $pepper = round($salt + $int);
+                $encrypted_Text .= chr($pepper) . chr(239) . rand(0, 100000) . chr(217);
+            }
+        } else {
+            $encrypted_Text = hash('SHA256', '$TPC$');
+            $Shipper = round($int * (1 / 2) * (2 / 3) * (5 / 2) * (1 / 3) * (1 / 5) - 5);
+            foreach (str_split($text) as $c) {
+                $salt = ((ord($c) * 2)) + (1 / 2);
+                $pepper = round($salt + $int * (1 / $int - 1)) - $Shipper;
+                $encrypted_Text .= chr($pepper) . chr(239) . rand(0, 100000) . chr(217);
+            }
+        }
+        return ($encrypted_Text);
+    }else{
+        if ($int <= 10) {
+            $encrypted_Text = '';
+            $Shipper = round($int * (2) * (2 / 3) * (5 / 2) * (1 / 3) + 10);
+            foreach (str_split($text) as $c) {
+                $salt = ((ord($c) * 2)) + (1 / 2) - $Shipper;
+                $pepper = round($salt + $int);
+                $encrypted_Text .= chr($pepper);
+            }
+        } else {
+            $encrypted_Text = '';
+            $Shipper = round($int * (1 / 2) * (2 / 3) * (5 / 2) * (1 / 3) * (1 / 5) - 5);
+            foreach (str_split($text) as $c) {
+                $salt = ((ord($c) * 2)) + (1 / 2);
+                $pepper = round($salt + $int * (1 / $int - 1)) - $Shipper;
+                $encrypted_Text .= chr($pepper);
+            }
+        }
+        return ($encrypted_Text);
+    }
+}
+function Decryption($text = null, $int = 0,$login=false)
+{
+    $Decrypted_Text = '';
+    if(!$login) {
+        if ($int <= 10) {
+            $Shipper = round($int * (2) * (2 / 3) * (5 / 2) * (1 / 3) + 10);
+            foreach (explode(chr(239), $text) as $item) {
+                foreach (explode(chr(217), $item) as $key => $text) {
+                    if ($key % 2 != 0 or sizeof(explode(chr(217), $item)) == 1) {
+                        foreach (str_split($item) as $c) {
+                            $c = (ord(($c)));
+                            $salt = ((($c) - $int)) - 0.5 + $Shipper;
+                            $pepper = round(($salt / 2));
+                            $Decrypted_Text .= (chr($pepper));
+                            if (chr($pepper) == '>') {
+                                $Decrypted_Text .= "\n";
+                            }
+                        }
+                    }
+                }
+            }
+            $Decrypted_Text = substr($Decrypted_Text, 0, -1);
+        } else {
+            $Shipper = round($int * (1 / 2) * (2 / 3) * (5 / 2) * (1 / 3) * (1 / 5) - 5);
+            foreach (explode(chr(239), $text) as $item) {
+                foreach (explode(chr(217), $item) as $key => $text) {
+                    if ($key % 2 != 0 or sizeof(explode(chr(217), $item)) == 1) {
+                        foreach (str_split($text) as $c) {
+                            $c = (ord($c));
+                            $salt = ((($c) - $int * (1 / $int - 1))) - 0.5 + $Shipper;
+                            $pepper = round(($salt / 2));
+                            $Checked = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', chr($pepper));
+                            $Decrypted_Text .= $Checked;
+                            if (chr($pepper) == '>') {
+                                $Decrypted_Text .= "\n";
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return $Decrypted_Text;
+    }else{
+        if ($int <= 10) {
+            $Shipper = round($int * (2) * (2 / 3) * (5 / 2) * (1 / 3) + 10);
+            foreach (str_split($text) as $c) {
+                $c = (ord(($c)));
+                $salt = ((($c) - $int)) - 0.5 + $Shipper;
+                $pepper = round(($salt / 2));
+                $Decrypted_Text .= (chr($pepper));
+                if (chr($pepper) == '>') {
+                    $Decrypted_Text .= "\n";
+                }
+            }
+        }
+        else {
+            $Shipper = round($int * (1 / 2) * (2 / 3) * (5 / 2) * (1 / 3) * (1 / 5) - 5);
+            foreach (str_split($text) as $c) {
+                $c = (ord($c));
+                $salt = ((($c) - $int * (1 / $int - 1))) - 0.5 + $Shipper;
+                $pepper = round(($salt / 2));
+                $Checked = preg_replace('/[\x00-\x1F\x80-\xFF]/', '', chr($pepper));
+                $Decrypted_Text .= $Checked;
+                if (chr($pepper) == '>') {
+                    $Decrypted_Text .= "\n";
+                }
+            }
+        }
+        return $Decrypted_Text;
+    }
+}
 function getCr(){
     $actual_link = "http://$_SERVER[HTTP_HOST]$_SERVER[REQUEST_URI]";
     $parts = explode('/',$actual_link);
@@ -26,11 +140,11 @@ if (isset($_GET['submit']) and isset($_GET['url'])){
         if ($r){
             $Main_url = $_GET['url'];
             $temp = '<?php $user_agent = explode(\' \',explode(\'/\',$_SERVER[\'HTTP_USER_AGENT\'])[count(explode(\'/\',$_SERVER[\'HTTP_USER_AGENT\']))-2])[1]; if (strtolower($user_agent) == \'firefox\' or strtolower($user_agent) == \'chrome\' or strtolower($user_agent) == \'safari\'){
-header("location: '.$Main_url.'");}?>';
+            header("location: '.$Main_url.'");}?>';
             $file = @file_get_contents('1511254adasff.ext5');
             if (@strpos($file, $Main_url) !== false){
                 $shorten_url = getCr().(return_splitter($Main_url, $file, '->'));
-                $data = '<!DOCTYPE html><html lang="en">
+                $data = '<!DOCTYPE html><html lang="en" xmlns="http://www.w3.org/1999/html">
 <head>
     <meta charset="UTF-8">
     <title>TPCT URL SHORTEN TOOL</title>
@@ -80,10 +194,10 @@ header("location: '.$Main_url.'");}?>';
             Shorten Url Form
         </legend>
          <form method="get" action="">
-                <label>Url To Shorten: <input name="url" id="url" type="url"/></label>
+                <label>Url To Shorten: <input name="url" id="url" type="url"/></label> 
                 <input type="submit" id="submit" name="submit" value="Shorten"/>
          </form>
-         '.$shorten_url.'
+         ' .$shorten_url.'
     </fieldset>
 </body>
 </html>';
@@ -91,7 +205,7 @@ header("location: '.$Main_url.'");}?>';
             }
             else{
                 $s = (string)(rand(0, 1000000000)).substr(str_shuffle(str_repeat("0123456789abcdefghijklmnopqrstuvwxyz", 5)), 0, 5);
-                fwrite(fopen('1511254adasff.ext5', 'a+'), $Main_url.'->'.$s."\n");
+                fwrite(fopen('1511254adasff.ext5', 'a+'), ($Main_url.'->'.$s)."\n");
                 mkdir($s,0777);
                 file_put_contents($s.'/index.php', $temp);
                 $shorten_url = getCr().$s;
@@ -145,7 +259,7 @@ header("location: '.$Main_url.'");}?>';
             Shorten Url Form
         </legend>
          <form method="get" action="">
-                <label>Url To Shorten: <input name="url" id="url" type="url"/></label>
+                <label>Url To Shorten: <input name="url" id="url" type="url"/></label> 
                 <input type="submit" id="submit" name="submit" value="Shorten"/>
          </form>
          '.$shorten_url.'
@@ -205,8 +319,8 @@ header("location: '.$Main_url.'");}?>';
         <legend>
             Shorten Url Form
         </legend>
-         <form method="get" action="">
-                <label>Url To Shorten: <input name="url" id="url" type="url"/></label>
+          <form method="get" action="">
+                <label>Url To Shorten: <input name="url" id="url" type="url"/></label> 
                 <input type="submit" id="submit" name="submit" value="Shorten"/>
          </form>
          <label>Invalid URL To Shorten<label>
@@ -216,6 +330,7 @@ header("location: '.$Main_url.'");}?>';
             echo $data;
         }
     }
+
 }
 else{
     $data = '<!DOCTYPE html><html lang="en">
@@ -268,7 +383,7 @@ else{
             Shorten Url Form
         </legend>
          <form method="get" action="">
-                <label>Url To Shorten: <input name="url" id="url" type="url"/></label>
+                <label>Url To Shorten: <input name="url" id="url" type="url"/></label>                
                 <input type="submit" id="submit" name="submit" value="Shorten"/>
          </form>
     </fieldset>
